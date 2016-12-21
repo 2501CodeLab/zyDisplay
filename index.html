@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <!-- Viewports -->
+        <meta charset="utf-8">
+        <meta http-equiv="X-UA-Compatible" content="IE=edge">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <!-- Desc. -->
+        <title>zyDisplay</title>
+        <meta name="description" content="Display manager.">
+        <meta name="author" content="Zyplos">
+        <!-- CSS -->
+        <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+        <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u" crossorigin="anonymous">
+        <link href="https://bootswatch.com/paper/bootstrap.min.css" rel="stylesheet" type="text/css">
+        <style>
+            body,
+            html {
+                margin: 0;
+            }
+            #main {
+                position: absolute;
+                height: 100%;
+                width: 100%;
+                border: none;
+            }
+            #monitorCPBtn {
+                width: 24px;
+                height: 24px;
+                background-color: #2196F3;
+                position: absolute;
+                z-index: 20;
+                top: 90%;
+                left: -20px;
+                -webkit-transition: all 1200ms cubic-bezier(0.215, 0.610, 0.355, 1.000);
+                -moz-transition: all 1200ms cubic-bezier(0.215, 0.610, 0.355, 1.000);
+                -o-transition: all 1200ms cubic-bezier(0.215, 0.610, 0.355, 1.000);
+                transition: all 1200ms cubic-bezier(0.215, 0.610, 0.355, 1.000);
+                cursor: pointer;
+            }
+            #monitorCPBtn:hover {
+                -webkit-transition: all 1200ms cubic-bezier(0.215, 0.610, 0.355, 1.000);
+                -moz-transition: all 1200ms cubic-bezier(0.215, 0.610, 0.355, 1.000);
+                -o-transition: all 1200ms cubic-bezier(0.215, 0.610, 0.355, 1.000);
+                transition: all 1200ms cubic-bezier(0.215, 0.610, 0.355, 1.000);
+                left: 0;
+            }
+            .panel {
+                -webkit-transition: all 700ms cubic-bezier(0.215, 0.610, 0.355, 1.000);
+                -moz-transition: all 700ms cubic-bezier(0.215, 0.610, 0.355, 1.000);
+                -o-transition: all 700ms cubic-bezier(0.215, 0.610, 0.355, 1.000);
+                transition: all 700ms cubic-bezier(0.215, 0.610, 0.355, 1.000);
+            }
+            .panel:hover {
+                -webkit-transition: all 700ms cubic-bezier(0.215, 0.610, 0.355, 1.000);
+                -moz-transition: all 700ms cubic-bezier(0.215, 0.610, 0.355, 1.000);
+                -o-transition: all 700ms cubic-bezier(0.215, 0.610, 0.355, 1.000);
+                transition: all 700ms cubic-bezier(0.215, 0.610, 0.355, 1.000);
+                box-shadow: 0 5px 9px rgba(0, 0, 0, 0.3);
+            }
+        </style>
+    </head>
+    <body>
+        <div class="modal fade" id="monitorControlPanel" tabindex="-1">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
+                        <h4 class="modal-title">Monitor Controls</h4>
+                    </div>
+                    <div class="modal-body">
+                        <h5 style="display: inline-block; padding: 10px">Sync Monitor</h5>
+                        <button id="logBtn" style="display: inline-block" class="btn btn-primary">Sign In</button>
+                        <a href="admin.html" style="display: inline-block" class="btn btn-danger">Admin Page</a>
+                        <div id="accountSection">
+                            <div id="monitors"></div>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div id="monitorCPBtn">
+            <i class="material-icons" style="color:white">edit</i>
+        </div>
+        <iframe id="main" src="default.html"></iframe>
+        <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.0.0/jquery.min.js" integrity="sha384-THPy051/pYDQGanwU6poAc/hOdQxjnOEXzbT+OuUAFqNqFjL+4IGLBgCJC3ZOShY" crossorigin="anonymous"></script>
+        <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js" integrity="sha384-Tc5IQib027qvyjSMfHjOMaLkfuWVxZxUPnCJA7l2mCWNIpG9mGCD8wGNIcPD7Txa" crossorigin="anonymous"></script>
+        <script src="https://www.gstatic.com/firebasejs/3.6.3/firebase.js"></script>
+        <script src="assets/js/core.js"></script>
+        <script>
+            var lg = false;
+            var sel = "";
+            var uid = "";
+            var selRef = firebase.database().ref("/");
+            var userRef = firebase.database().ref("/");
+            $(".modal-body").on("click", "button#logBtn", function () {
+                if (!lg) {
+                    var provider = new firebase.auth.GoogleAuthProvider();
+                    firebase.auth().signInWithPopup(provider);
+                }
+            });
+            firebase.auth().onAuthStateChanged(function (user) {
+                if (user) {
+                    lg = true;
+                    uid = user.uid;
+                    $("#logBtn").text("Sign Out");
+                    userRef = firebase.database().ref(user.uid + "/");
+                    //
+                    console.log(userRef.toString());
+                    //
+                    userRef.on("child_removed", function (data) {
+                        $("#" + data.key).remove();
+                    });
+                    userRef.on("child_added", function (data) {
+                        console.log(data + data.key + data.val() + data.val().monitorName);
+                        $("#monitors").append('<div class="panel panel-default" id="' + data.key + '"> <div class="panel-body"> <p class="lead">' + data.val().monitorName + '</p> <code class="mCPURL">' + data.val().monitorURL + '</code> <br><p class="mCPDesc">' + data.val().monitorDesc + '</p></div> </div>');
+                    });
+                }
+            });
+            //
+            $(".modal-body").on("click", "button#logBtn", function () {
+                if (lg) {
+                    firebase.auth().signOut().then(function () {
+                        $("#logBtn").text("Sign In");
+                        $("#monitors").html("");
+                        lg = false;
+                    }, function (error) {
+                        console.log("um " + error);
+                    });
+                }
+            });
+            $("#monitors").on("click", "div.panel", function () {
+                if (sel == "") {
+                    $(this).css({"background-color": "#fff", "color": "#666666 "});
+                } else {
+                    $("#" + sel).css({"background-color": "#fff", "color": "#666666 "});
+                }
+                firebase.database().ref(uid + "/" + $(this).attr("id") + "/").once('value').then(function (snapshot) {
+                    $("#main").attr("src", snapshot.val().monitorURL);
+                });
+                sel = $(this).attr("id");
+                selRef = firebase.database().ref(uid + "/" + sel + "/");
+                selRef.on("child_changed", function (data) {
+                    if (data.key == "monitorURL") {
+                        $("#" + sel).find(".mCPURL").text(data.val());
+                        $("#main").attr("src", data.val());
+                    } else if (data.key == "monitorDesc") {
+                        $("#" + sel).find(".mCPDesc").text(data.val());
+                    } else if (data.key == "monitorName") {
+                        $("#" + sel).find(".lead").text(data.val());
+                    }
+                });
+                $(this).css({"background-color": "#4caf50", "color": "white"});
+            });
+            $("#monitorCPBtn").click(function () {
+                $('#monitorControlPanel').modal('show');
+            });
+        </script>
+    </body>
+</html>
