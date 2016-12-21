@@ -118,6 +118,16 @@
                         console.log(data + data.key + data.val() + data.val().monitorName);
                         $("#monitors").append('<div class="panel panel-default" id="' + data.key + '"> <div class="panel-body"> <p class="lead">' + data.val().monitorName + '</p> <code class="mCPURL">' + data.val().monitorURL + '</code> <br><p class="mCPDesc">' + data.val().monitorDesc + '</p></div> </div>');
                     });
+                    userRef.on("child_changed", function (data) {
+                        //
+                        $("#" + data.key).find(".mCPURL").text(data.val().monitorURL);
+                        $("#" + data.key).find(".mCPDesc").text(data.val().monitorDesc);
+                        $("#" + data.key).find(".lead").text(data.val().monitorName);
+                        //
+                        if (!sel == "" && sel == data.key) {
+                            $("#main").attr("src", data.val().monitorURL);
+                        }
+                    }); //
                 }
             });
             //
@@ -143,16 +153,6 @@
                 });
                 sel = $(this).attr("id");
                 selRef = firebase.database().ref(uid + "/" + sel + "/");
-                selRef.on("child_changed", function (data) {
-                    if (data.key == "monitorURL") {
-                        $("#" + sel).find(".mCPURL").text(data.val());
-                        $("#main").attr("src", data.val());
-                    } else if (data.key == "monitorDesc") {
-                        $("#" + sel).find(".mCPDesc").text(data.val());
-                    } else if (data.key == "monitorName") {
-                        $("#" + sel).find(".lead").text(data.val());
-                    }
-                });
                 $(this).css({"background-color": "#4caf50", "color": "white"});
             });
             $("#monitorCPBtn").click(function () {
